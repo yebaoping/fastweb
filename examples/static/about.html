@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<h1>about</h1>
+<ul>
+    {{ range $i,$r:= . }}
+    <li>
+        <span>{{ $r.ID }}</span>
+        <span>{{ $r.Name }}</span>
+    </li>
+    {{ end }}
+</ul>
+</body>
+</html>
