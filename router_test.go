@@ -104,14 +104,10 @@ func Test_route(t *testing.T) {
 		}
 	}
 
-	ctx := &HttpContext{
-		Params: make(requestParams),
-	}
-
 	for regRoute, pathMethodHandler := range routePathMethodHandler {
 		for path, methodHandler := range pathMethodHandler {
 			for method := range methodHandler {
-				route, err := r.Route(ctx, path, method)
+				route, err := r.Route(path, method)
 				if err != nil {
 					t.Errorf("path:%s route error:%+v", path, err)
 					continue
