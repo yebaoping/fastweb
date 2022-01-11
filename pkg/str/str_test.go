@@ -21,3 +21,14 @@ func Test_String(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func Test_Connect(t *testing.T) {
+	s := []string{"hello", ",", "你好", "！", " "}
+	str, err := Connect(s...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if str != "hello,你好！ " {
+		t.Fail()
+	}
+}

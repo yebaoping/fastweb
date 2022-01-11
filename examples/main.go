@@ -28,7 +28,7 @@ func main() {
 		}
 	}, middleware.CORS(middleware.DefaultCORSConfig))
 
-	app.Static("/", "./static/index.html", "text/html", nil)
+	app.Static("/", "./static/index.html", fastweb.ContentTypeTextHtml, nil)
 
 	app.Head("/", func(ctx *fastweb.HttpContext) error {
 		return nil

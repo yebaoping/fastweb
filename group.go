@@ -70,7 +70,7 @@ func (g *group) Static(path, file, contentType string, data interface{}, middlew
 }
 
 func (g *group) Html(path, file string, data interface{}, middlewares ...Middleware) {
-	g.Static(path, file, "text/html", data, middlewares...)
+	g.Static(path, file, ContentTypeTextHtml, data, middlewares...)
 }
 
 func (g *group) Get(path string, handler HttpHandler, middlewares ...Middleware) {
