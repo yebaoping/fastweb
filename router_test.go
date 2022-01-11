@@ -124,6 +124,74 @@ func Test_route(t *testing.T) {
 	}
 }
 
+func Test_route_repeat(t *testing.T) {
+	path := "/user"
+	key := "value"
+	val := ""
+	ctx := &HttpContext{Params: map[string]string{
+		key: "",
+	}}
+
+	val = "http get 1"
+	r.RegisterRoute(path, http.MethodGet, func(ctx *HttpContext) error {
+		ctx.Params[key] = val
+		return nil
+	})
+	route, err := r.Route(path, http.MethodGet)
+	if err != nil {
+		t.Error(err)
+	}
+	err = route.handler(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if ctx.Params[key] != val {
+		t.Fail()
+	}
+
+	val = "http get 2"
+	r.RegisterRoute(path, http.MethodGet, func(ctx *HttpContext) error {
+		ctx.Params[key] = val
+		return nil
+	})
+	route, err = r.Route(path, http.MethodGet)
+	if err != nil {
+		t.Error(err)
+	}
+	err = route.handler(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if ctx.Params[key] != val {
+		t.Fail()
+	}
+}
+
+func Test_route_error(t *testing.T) {
+	path := "/user"
+	r.RegisterRoute(path, http.MethodGet, func(ctx *HttpContext) error {
+		return nil
+	})
+
+	// 路由不存在的情况
+	route, err := r.Route("/user/1", http.MethodGet)
+	if err == nil || route != nil {
+		t.Fail()
+	}
+	if err != ErrNotFound {
+		t.Fail()
+	}
+
+	// http method 不匹配的情况
+	route, err = r.Route("/user", http.MethodPost)
+	if err == nil || route != nil {
+		t.Fail()
+	}
+	if err != ErrMethodNotAllowed {
+		t.Fail()
+	}
+}
+
 func Test_params(t *testing.T) {
 	regPathPathParams := map[string]map[string]requestParams{
 		"/": {
