@@ -9,12 +9,12 @@ import (
 var r *defaultRouter
 
 func TestMain(m *testing.M) {
-	r = DefaultRouter()
-
 	m.Run()
 }
 
 func Test_parseRoute(t *testing.T) {
+	r = DefaultRouter()
+
 	pathRoute := map[string]string{
 		"/":                       `^\/*$`,
 		"/api/user":               `^/api/user\/*$`,
@@ -35,6 +35,8 @@ func Test_parseRoute(t *testing.T) {
 }
 
 func Test_route(t *testing.T) {
+	r = DefaultRouter()
+
 	// 路由/路径/HTTP Method
 	routePathMethodHandler := map[string]map[string]map[string]HttpHandler{
 		"/": {
@@ -125,6 +127,8 @@ func Test_route(t *testing.T) {
 }
 
 func Test_route_repeat(t *testing.T) {
+	r = DefaultRouter()
+
 	path := "/user"
 	key := "value"
 	val := ""
@@ -168,6 +172,8 @@ func Test_route_repeat(t *testing.T) {
 }
 
 func Test_route_error(t *testing.T) {
+	r = DefaultRouter()
+
 	path := "/user"
 	r.RegisterRoute(path, http.MethodGet, func(ctx *HttpContext) error {
 		return nil
@@ -193,6 +199,8 @@ func Test_route_error(t *testing.T) {
 }
 
 func Test_params(t *testing.T) {
+	r = DefaultRouter()
+
 	regPathPathParams := map[string]map[string]requestParams{
 		"/": {
 			"/": requestParams{},
