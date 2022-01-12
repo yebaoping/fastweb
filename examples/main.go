@@ -11,7 +11,7 @@ import (
 
 func main() {
 	logger := fastweb.DefaultLogger(os.Stdout, true)
-	app := fastweb.NewApp(logger, nil)
+	app := fastweb.NewApp(logger, nil, nil)
 
 	app.ErrorHandler = func(ctx *fastweb.HttpContext, err error) {
 		if err != nil {

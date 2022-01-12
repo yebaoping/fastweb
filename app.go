@@ -15,15 +15,17 @@ type App struct {
 	server       *fasthttp.Server
 	router       Router
 	log          Logger
+	binder       Binder
 	middlewares  []Middleware
 	ErrorHandler func(ctx *HttpContext, err error)
 }
 
-func NewApp(l Logger, r Router) *App {
+func NewApp(l Logger, r Router, b Binder) *App {
 	a := &App{
 		server:      &fasthttp.Server{},
 		router:      r,
 		log:         l,
+		binder:      b,
 		middlewares: make([]Middleware, 0),
 	}
 
@@ -33,6 +35,10 @@ func NewApp(l Logger, r Router) *App {
 
 	if a.router == nil {
 		a.router = DefaultRouter()
+	}
+
+	if a.binder == nil {
+		a.binder = DefaultBinder()
 	}
 
 	a.server.Handler = a.handleRequest()
@@ -179,6 +185,7 @@ func (a *App) handleRequest() fasthttp.RequestHandler {
 		httpCtx := &HttpContext{
 			RequestCtx: ctx,
 			Params:     make(map[string]string),
+			binder:     a.binder,
 		}
 
 		// 根据path和http method获取对应的handler
