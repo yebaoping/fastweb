@@ -109,18 +109,21 @@ func Test_route(t *testing.T) {
 	for regRoute, pathMethodHandler := range routePathMethodHandler {
 		for path, methodHandler := range pathMethodHandler {
 			for method := range methodHandler {
-				route, err := r.Route(path, method)
+				ctx := &HttpContext{
+					Params: make(requestParams),
+				}
+				route, err := r.Route(ctx, path, method)
 				if err != nil {
 					t.Errorf("path:%s route error:%+v", path, err)
 					continue
 				}
 
-				if regRoute != route.path {
-					t.Errorf("routePath:%s,path:%s,route:%s", regRoute, path, route.path)
+				if regRoute != route.Path {
+					t.Errorf("routePath:%s,path:%s,route:%s", regRoute, path, route.Path)
 					continue
 				}
 
-				//t.Logf("routePath:%s,path:%s,route:%s", routePath, path, route.path)
+				//t.Logf("routePath:%s,path:%s,route:%s", routePath, path, route.Path)
 			}
 		}
 	}
@@ -141,11 +144,11 @@ func Test_route_repeat(t *testing.T) {
 		ctx.Params[key] = val
 		return nil
 	})
-	route, err := r.Route(path, http.MethodGet)
+	route, err := r.Route(ctx, path, http.MethodGet)
 	if err != nil {
 		t.Error(err)
 	}
-	err = route.handler(ctx)
+	err = route.Handler(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -158,11 +161,11 @@ func Test_route_repeat(t *testing.T) {
 		ctx.Params[key] = val
 		return nil
 	})
-	route, err = r.Route(path, http.MethodGet)
+	route, err = r.Route(ctx, path, http.MethodGet)
 	if err != nil {
 		t.Error(err)
 	}
-	err = route.handler(ctx)
+	err = route.Handler(ctx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -179,8 +182,14 @@ func Test_route_error(t *testing.T) {
 		return nil
 	})
 
+	ctx := &HttpContext{
+		RequestCtx: nil,
+		Params:     make(requestParams),
+		binder:     nil,
+	}
+
 	// 路由不存在的情况
-	route, err := r.Route("/user/1", http.MethodGet)
+	route, err := r.Route(ctx, "/user/1", http.MethodGet)
 	if err == nil || route != nil {
 		t.Fail()
 	}
@@ -189,7 +198,7 @@ func Test_route_error(t *testing.T) {
 	}
 
 	// http method 不匹配的情况
-	route, err = r.Route("/user", http.MethodPost)
+	route, err = r.Route(ctx, "/user", http.MethodPost)
 	if err == nil || route != nil {
 		t.Fail()
 	}

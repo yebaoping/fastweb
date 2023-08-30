@@ -1,17 +1,20 @@
 package main
 
 import (
-	"github.com/yebaoping/fastweb"
+	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"time"
+
+	"github.com/yebaoping/fastweb"
 
 	"github.com/yebaoping/fastweb/middleware"
 )
 
 func main() {
 	logger := fastweb.DefaultLogger(os.Stdout, true)
-	app := fastweb.NewApp(logger, nil, nil)
+	app := fastweb.NewApp(logger, fastweb.NewRadixTreeRouter(), nil)
 
 	app.ErrorHandler = func(ctx *fastweb.HttpContext, err error) {
 		if err != nil {
@@ -54,20 +57,24 @@ func main() {
 		},
 	)
 
+	userGroup.Get("", func(ctx *fastweb.HttpContext) error {
+		return ctx.Json(users)
+	})
+
 	userGroup.Get("/", func(ctx *fastweb.HttpContext) error {
 		return ctx.Json(users)
 	})
 
-	userGroup.Get("/:page/:size", func(ctx *fastweb.HttpContext) error {
-		pPage := ctx.Params.Get("page")
-		pSize := ctx.Params.Get("size")
+	userGroup.Get("/:start/:stop", func(ctx *fastweb.HttpContext) error {
+		pstart := ctx.Params.Get("start")
+		pstop := ctx.Params.Get("stop")
 
-		page, err := strconv.ParseInt(pPage, 10, 64)
+		start, err := strconv.ParseInt(pstart, 10, 64)
 		if err != nil {
 			return err
 		}
 
-		size, err := strconv.ParseInt(pSize, 10, 64)
+		stop, err := strconv.ParseInt(pstop, 10, 64)
 		if err != nil {
 			return err
 		}
@@ -77,7 +84,7 @@ func main() {
 			s = append(s, u)
 		}
 
-		return ctx.Json(s[(page-1)*size : (page-1)*size+size])
+		return ctx.Json(s[start : stop+1])
 	})
 
 	userGroup.Get("/:id", func(ctx *fastweb.HttpContext) error {
@@ -115,6 +122,60 @@ func main() {
 		}
 
 		return ctx.Json(users[id])
+	})
+
+	userGroup.Get("/:start/:stop/export", func(ctx *fastweb.HttpContext) error {
+		pstart := ctx.Params.Get("start")
+		pstop := ctx.Params.Get("stop")
+
+		start, err := strconv.ParseInt(pstart, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		stop, err := strconv.ParseInt(pstop, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		s := make([]*User, 0)
+		for _, u := range users {
+			s = append(s, u)
+		}
+
+		fileName := "export_" + time.Now().Format("20060102150405") + ".csv"
+		filePath := path.Join(os.TempDir(), fileName)
+		file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0777)
+		if err != nil {
+			return ctx.Error(err)
+		}
+		defer func() {
+			file.Close()
+			os.Remove(filePath)
+		}()
+
+		file.Write([]byte{0xEF, 0xBB, 0xBF})
+		file.WriteString("id, name, address\n")
+		for i := start; i <= stop; i++ {
+			u := s[i]
+			file.WriteString(fmt.Sprintf("%d, %s, %v\n", u.ID, u.Name, u.Addrs))
+		}
+		file.Sync()
+
+		// ctx.SendFile(filePath)
+		return ctx.Attachment(filePath, fileName)
+	})
+
+	userGroup.Get("/:id/delete", func(ctx *fastweb.HttpContext) error {
+		pId := ctx.Params.Get("id")
+		id, err := strconv.ParseInt(pId, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		delete(users, id)
+
+		return ctx.Json(users)
 	})
 
 	userGroup.Get("/panic", func(ctx *fastweb.HttpContext) error {
@@ -185,20 +246,23 @@ type User struct {
 
 var users = map[int64]*User{
 	1: {
-		ID:   1,
-		Name: "tom",
+		ID:    1,
+		Name:  "tom",
+		Addrs: []string{"hangzhou"},
 		Roles: []*Role{
 			roles[1],
 			roles[2],
 		},
 	},
 	2: {
-		ID:   2,
-		Name: "jack",
+		ID:    2,
+		Name:  "jack",
+		Addrs: []string{"beijing"},
 	},
 	3: {
-		ID:   3,
-		Name: "jim",
+		ID:    3,
+		Name:  "jim",
+		Addrs: []string{"shanghai"},
 	},
 }
 

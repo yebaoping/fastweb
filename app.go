@@ -189,7 +189,7 @@ func (a *App) handleRequest() fasthttp.RequestHandler {
 		}
 
 		// 根据path和http method获取对应的handler
-		route, err := a.router.Route(path, httpCtx.Method())
+		route, err := a.router.Route(httpCtx, path, httpCtx.Method())
 		if err != nil || route == nil {
 			switch err {
 			case ErrMethodNotAllowed:
@@ -206,14 +206,14 @@ func (a *App) handleRequest() fasthttp.RequestHandler {
 		}
 
 		//绑定参数
-		err = a.router.Params(httpCtx, route.path, path)
+		err = a.router.Params(httpCtx, route.Path, path)
 		if err != nil {
 			ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 			return
 		}
 
 		// 执行handler
-		err = route.handler(httpCtx)
+		err = route.Handler(httpCtx)
 		if err != nil {
 			if a.ErrorHandler != nil {
 				a.ErrorHandler(httpCtx, err)

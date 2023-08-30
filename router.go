@@ -8,24 +8,24 @@ import (
 
 type Router interface {
 	RegisterRoute(path, method string, h HttpHandler)
-	Route(path, method string) (*route, error)
+	Route(ctx *HttpContext, path, method string) (*Route, error)
 	Params(ctx *HttpContext, regPath, path string) error
 }
 
-type route struct {
-	path    string // 注册的原始路径
-	method  string
-	handler HttpHandler
+type Route struct {
+	Path    string // 注册的原始路径
+	Method  string
+	Handler HttpHandler
 }
 
 type defaultRouter struct {
-	routes map[int]*route
+	routes map[int]*Route
 	index  []string
 }
 
 func DefaultRouter() *defaultRouter {
 	return &defaultRouter{
-		routes: make(map[int]*route),
+		routes: make(map[int]*Route),
 		index:  make([]string, 0),
 	}
 }
@@ -50,15 +50,15 @@ func (r *defaultRouter) RegisterRoute(path, method string, h HttpHandler) {
 	// map无序，先把路由保存在有序的slice中，保证顺序
 	r.index = append(r.index, pr)
 
-	r.routes[len(r.index)-1] = &route{
-		path:    path,
-		method:  method,
-		handler: h,
+	r.routes[len(r.index)-1] = &Route{
+		Path:    path,
+		Method:  method,
+		Handler: h,
 	}
 }
 
 /*
-func (r *router) route(ctx *HttpContext, path, method string) *route {
+func (r *router) Route(ctx *HttpContext, path, method string) *Route {
 	// 逆序，后注册的路由会覆盖之前注册的同名路由
 	l := len(r.index)
 	for l > 0 {
@@ -76,8 +76,8 @@ func (r *router) route(ctx *HttpContext, path, method string) *route {
 }
 */
 
-func (r *defaultRouter) Route(path, method string) (*route, error) {
-	s := make([]*route, 0, len(r.index))
+func (r *defaultRouter) Route(ctx *HttpContext, path, method string) (*Route, error) {
+	s := make([]*Route, 0, len(r.index))
 
 	// 逆序，后注册的路由会覆盖之前注册的同名路由
 	l := len(r.index)
@@ -92,7 +92,7 @@ func (r *defaultRouter) Route(path, method string) (*route, error) {
 				continue
 			}
 
-			if route.method == method {
+			if route.Method == method {
 				return route, nil
 			}
 

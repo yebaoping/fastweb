@@ -1,6 +1,7 @@
 package fastweb
 
 import (
+	"fmt"
 	"github.com/valyala/fasthttp"
 	"github.com/yebaoping/fastweb/pkg/json"
 	"github.com/yebaoping/fastweb/pkg/str"
@@ -57,5 +58,11 @@ func (ctx *HttpContext) Error(err error) error {
 func (ctx *HttpContext) NoContent() error {
 	ctx.Response.Reset()
 	ctx.SetStatusCode(fasthttp.StatusNoContent)
+	return nil
+}
+
+func (ctx *HttpContext) Attachment(path, name string) error {
+	ctx.Response.Header.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", name))
+	ctx.SendFile(path)
 	return nil
 }
