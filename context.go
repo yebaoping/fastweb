@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/valyala/fasthttp"
 	"github.com/yebaoping/fastweb/pkg/json"
-	"github.com/yebaoping/fastweb/pkg/str"
 )
 
 type HttpContext struct {
@@ -20,19 +19,19 @@ func (rp requestParams) Get(name string) string {
 }
 
 func (ctx *HttpContext) Method() string {
-	return str.String(ctx.RequestCtx.Method())
+	return string(ctx.RequestCtx.Method())
 }
 
 func (ctx *HttpContext) Path() string {
-	return str.String(ctx.RequestCtx.Path())
+	return string(ctx.RequestCtx.Path())
 }
 
 func (ctx *HttpContext) Header(key string) string {
-	return str.String(ctx.Request.Header.Peek(key))
+	return string(ctx.Request.Header.Peek(key))
 }
 
 func (ctx *HttpContext) Query(key string) string {
-	return str.String(ctx.QueryArgs().Peek(key))
+	return string(ctx.QueryArgs().Peek(key))
 }
 
 func (ctx *HttpContext) Bind(val interface{}) error {

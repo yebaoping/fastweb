@@ -8,7 +8,6 @@ import (
 	"html/template"
 
 	"github.com/valyala/fasthttp"
-	"github.com/yebaoping/fastweb/pkg/str"
 )
 
 type App struct {
@@ -22,7 +21,9 @@ type App struct {
 
 func NewApp(l Logger, r Router, b Binder) *App {
 	a := &App{
-		server:      &fasthttp.Server{},
+		server: &fasthttp.Server{
+			Logger: l,
+		},
 		router:      r,
 		log:         l,
 		binder:      b,
@@ -178,7 +179,8 @@ func (a *App) Trace(path string, handler HttpHandler, middlewares ...Middleware)
 // 执行顺序：HttpHandler -> HttpHandler middlewares -> Group.middlewares -> App.middlewares -> ErrorHandler
 func (a *App) handleRequest() fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		path := str.String(ctx.Path())
+		// path := str.String(ctx.Path())
+		path := string(ctx.Request.URI().PathOriginal())
 
 		a.log.Debugf("request path:%s", path)
 

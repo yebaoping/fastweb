@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var regOrder = ""
+var regOrder = "random"
 
 func Test_RadixTreeRouter(t *testing.T) {
 	//regOrder = os.Getenv("regOrder")
@@ -687,13 +687,17 @@ func Test_RadixTreeRouter_parsePathParams(t *testing.T) {
 		isParam    bool
 		params     []string
 	}{
-		":id":                           {parsedPath: ":", isParam: true, params: []string{":id"}},
-		"/:id":                          {parsedPath: "/:", isParam: true, params: []string{":id"}},
-		"/api/user/:id":                 {parsedPath: "/api/user/:", isParam: true, params: []string{":id"}},
-		"/api/user/:id/edit":            {parsedPath: "/api/user/:/edit", isParam: true, params: []string{":id"}},
-		"/api/user/:start/:stop":        {parsedPath: "/api/user/:/:", isParam: true, params: []string{":start", ":stop"}},
-		"/api/user/:start/:stop/export": {parsedPath: "/api/user/:/:/export", isParam: true, params: []string{":start", ":stop"}},
-		"/api/user":                     {parsedPath: "/api/user", isParam: false, params: make([]string, 0)},
+		":id":                                {parsedPath: ":", isParam: true, params: []string{":id"}},
+		"/:id":                               {parsedPath: "/:", isParam: true, params: []string{":id"}},
+		"/api/user/:id":                      {parsedPath: "/api/user/:", isParam: true, params: []string{":id"}},
+		"/api/user/:id/edit":                 {parsedPath: "/api/user/:/edit", isParam: true, params: []string{":id"}},
+		"/api/user/:start/:stop":             {parsedPath: "/api/user/:/:", isParam: true, params: []string{":start", ":stop"}},
+		"/api/user/:page/:size/:sort":        {parsedPath: "/api/user/:/:/:", isParam: true, params: []string{":page", ":size", ":sort"}},
+		"/api/user/:start/:stop/export":      {parsedPath: "/api/user/:/:/export", isParam: true, params: []string{":start", ":stop"}},
+		"/api/user/:page/:size/:sort/export": {parsedPath: "/api/user/:/:/:/export", isParam: true, params: []string{":page", ":size", ":sort"}},
+		"/api/user/:uid/role/:rid":           {parsedPath: "/api/user/:/role/:", isParam: true, params: []string{":uid", ":rid"}},
+		"/api/user/:uid/role/:rid/delete":    {parsedPath: "/api/user/:/role/:/delete", isParam: true, params: []string{":uid", ":rid"}},
+		"/api/user":                          {parsedPath: "/api/user", isParam: false, params: make([]string, 0)},
 	}
 
 	for path, param := range pathParams {
@@ -719,180 +723,6 @@ func Test_RadixTreeRouter_parsePathParams(t *testing.T) {
 		_, _, _, err := parsePathParams(path)
 		if err == nil {
 			t.Fatalf("path:'%s' parse success", path)
-		}
-	}
-}
-
-func Test_RadixTreeRouter_replaceRouteParams(t *testing.T) {
-	routePathParams := []struct {
-		route string
-		paths []struct {
-			path        string
-			replaced    string
-			paramValues []string
-		}
-	}{
-		{
-			route: ":",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "1",
-					replaced:    "1",
-					paramValues: []string{"1"},
-				},
-				{
-					path:        "999",
-					replaced:    "999",
-					paramValues: []string{"999"},
-				},
-			},
-		},
-		{
-			route: ":/edit",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "1/edit",
-					replaced:    "1/edit",
-					paramValues: []string{"1"},
-				},
-				{
-					path:        "999/edit",
-					replaced:    "999/edit",
-					paramValues: []string{"999"},
-				},
-			},
-		},
-		{
-			route: "/:",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "/1",
-					replaced:    "/1",
-					paramValues: []string{"1"},
-				},
-				{
-					path:        "/99999",
-					replaced:    "/99999",
-					paramValues: []string{"99999"},
-				},
-			},
-		},
-		{
-			route: "/:/edit",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "/1/edit",
-					replaced:    "/1/edit",
-					paramValues: []string{"1"},
-				},
-				{
-					path:        "/99999/edit",
-					replaced:    "/99999/edit",
-					paramValues: []string{"99999"},
-				},
-			},
-		},
-		{
-			route: "/user/:",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "/user/1",
-					replaced:    "/user/1",
-					paramValues: []string{"1"},
-				},
-				{
-					path:        "/user/99999",
-					replaced:    "/user/99999",
-					paramValues: []string{"99999"},
-				},
-			},
-		},
-		{
-			route: "/user/:/edit",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "/user/1/edit",
-					replaced:    "/user/1/edit",
-					paramValues: []string{"1"},
-				},
-				{
-					path:        "/user/999999/edit",
-					replaced:    "/user/999999/edit",
-					paramValues: []string{"999999"},
-				},
-			},
-		},
-		{
-			route: "/user/:/:",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "/user/1/10",
-					replaced:    "/user/1/10",
-					paramValues: []string{"1", "10"},
-				},
-				{
-					path:        "/user/1000/99999",
-					replaced:    "/user/1000/99999",
-					paramValues: []string{"1000", "99999"},
-				},
-			},
-		},
-		{
-			route: "/user/:/:/export",
-			paths: []struct {
-				path        string
-				replaced    string
-				paramValues []string
-			}{
-				{
-					path:        "/user/1/10/export",
-					replaced:    "/user/1/10/export",
-					paramValues: []string{"1", "10"},
-				},
-				{
-					path:        "/user/1000/99999/export",
-					replaced:    "/user/1000/99999/export",
-					paramValues: []string{"1000", "99999"},
-				},
-			},
-		},
-	}
-
-	for _, routePathParam := range routePathParams {
-		for _, pathParam := range routePathParam.paths {
-			replaced, paramValues := replaceRouteParams(routePathParam.route, pathParam.path)
-			if replaced != pathParam.replaced && !reflect.DeepEqual(pathParam.paramValues, paramValues) {
-				t.Fatalf("route:'%s',Path:'%s',expectReplaced:'%s',replaced:'%s',expectParamValues:%+v,paramValues:%+v",
-					routePathParam.route, pathParam.path, pathParam.replaced, replaced, pathParam.paramValues, paramValues)
-			}
 		}
 	}
 }
@@ -927,5 +757,513 @@ func testRoute(t *testing.T, rtr *RadixTreeRouter, route, requestPath, method st
 	err = r.Handler(ctx)
 	if err != nil {
 		t.Fatalf("Handler:%s execute error:%+v", r.Path, err)
+	}
+}
+
+var routePathParams = []struct {
+	route string
+	paths []struct {
+		path        string
+		replaced    string
+		paramValues []string
+	}
+}{
+	{
+		route: ":",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "1",
+				replaced:    "1",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "999",
+				replaced:    "999",
+				paramValues: []string{"999"},
+			},
+			{
+				path:        "1/edit",
+				replaced:    "1",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "999999/edit",
+				replaced:    "999999",
+				paramValues: []string{"999999"},
+			},
+		},
+	},
+	{
+		route: ":/edit",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "1/edit",
+				replaced:    "1/edit",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "999/edit",
+				replaced:    "999/edit",
+				paramValues: []string{"999"},
+			},
+			{
+				path:        "1",
+				replaced:    "1/edit",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "99999",
+				replaced:    "99999/edit",
+				paramValues: []string{"99999"},
+			},
+		},
+	},
+	{
+		route: "/:",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/1",
+				replaced:    "/1",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/99999",
+				replaced:    "/99999",
+				paramValues: []string{"99999"},
+			},
+			{
+				path:        "/1/edit",
+				replaced:    "/1",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/999999/edit",
+				replaced:    "/999999",
+				paramValues: []string{"999999"},
+			},
+		},
+	},
+	{
+		route: "/:/edit",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/1/edit",
+				replaced:    "/1/edit",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/99999/edit",
+				replaced:    "/99999/edit",
+				paramValues: []string{"99999"},
+			},
+			{
+				path:        "/1",
+				replaced:    "/1/edit",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/99999",
+				replaced:    "/99999/edit",
+				paramValues: []string{"99999"},
+			},
+		},
+	},
+	{
+		route: "/user/:",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1",
+				replaced:    "/user/1",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/99999",
+				replaced:    "/user/99999",
+				paramValues: []string{"99999"},
+			},
+			{
+				path:        "/user/1/edit",
+				replaced:    "/user/1",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/99999/edit",
+				replaced:    "/user/99999",
+				paramValues: []string{"99999"},
+			},
+		},
+	},
+	{
+		route: "/user/:/edit",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/edit",
+				replaced:    "/user/1/edit",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/999999/edit",
+				replaced:    "/user/999999/edit",
+				paramValues: []string{"999999"},
+			},
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/edit",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/999999",
+				replaced:    "/user/999999/edit",
+				paramValues: []string{"999999"},
+			},
+		},
+	},
+	{
+		route: "/user/:/:",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/10",
+				replaced:    "/user/1/10",
+				paramValues: []string{"1", "10"},
+			},
+			{
+				path:        "/user/1000/99999",
+				replaced:    "/user/1000/99999",
+				paramValues: []string{"1000", "99999"},
+			},
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/:",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000",
+				replaced:    "/user/1000/:",
+				paramValues: []string{"1000"},
+			},
+			{
+				path:        "/user/1/10/export",
+				replaced:    "/user/1/10",
+				paramValues: []string{"1", "10"},
+			},
+			{
+				path:        "/user/1000/99999/export",
+				replaced:    "/user/1000/99999",
+				paramValues: []string{"1000", "99999"},
+			},
+		},
+	},
+	{
+		route: "/user/:/:/:",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/10/100",
+				replaced:    "/user/1/10/100",
+				paramValues: []string{"1", "10", "100"},
+			},
+			{
+				path:        "/user/1000/99999/9",
+				replaced:    "/user/1000/99999/9",
+				paramValues: []string{"1000", "99999", "9"},
+			},
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/:/:",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000",
+				replaced:    "/user/1000/:/:",
+				paramValues: []string{"1000"},
+			},
+			{
+				path:        "/user/1/10",
+				replaced:    "/user/1/10/:",
+				paramValues: []string{"1", "10"},
+			},
+			{
+				path:        "/user/1000/99999",
+				replaced:    "/user/1000/99999/:",
+				paramValues: []string{"1000", "99999"},
+			},
+			{
+				path:        "/user/1/10/99/export",
+				replaced:    "/user/1/10/99",
+				paramValues: []string{"1", "10", "99"},
+			},
+			{
+				path:        "/user/1000/99999/10/export",
+				replaced:    "/user/1000/99999/10",
+				paramValues: []string{"1000", "99999", "10"},
+			},
+		},
+	},
+	{
+		route: "/user/:/role/:",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/role/10",
+				replaced:    "/user/1/role/10",
+				paramValues: []string{"1", "10"},
+			},
+			{
+				path:        "/user/1000/role/99999",
+				replaced:    "/user/1000/role/99999",
+				paramValues: []string{"1000", "99999"},
+			},
+			{
+				path:        "/user/1/role/10/edit",
+				replaced:    "/user/1/role/10",
+				paramValues: []string{"1", "10"},
+			},
+			{
+				path:        "/user/1000/role/99999/edit",
+				replaced:    "/user/1000/role/99999",
+				paramValues: []string{"1000", "99999"},
+			},
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/role/:",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000",
+				replaced:    "/user/1000/role/:",
+				paramValues: []string{"1000"},
+			},
+			{
+				path:        "/user/1/role",
+				replaced:    "/user/1/role/:",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000/role",
+				replaced:    "/user/1000/role/:",
+				paramValues: []string{"1000"},
+			},
+		},
+	},
+	{
+		route: "/user/:/role/:/:",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/role/1/10",
+				replaced:    "/user/1/role/1/10",
+				paramValues: []string{"1", "1", "10"},
+			},
+			{
+				path:        "/user/1000/role/10000/99999",
+				replaced:    "/user/1000/role/10000/99999",
+				paramValues: []string{"1000", "10000", "99999"},
+			},
+			{
+				path:        "/user/1/role/1/10/edit",
+				replaced:    "/user/1/role/1/10",
+				paramValues: []string{"1", "1", "10"},
+			},
+			{
+				path:        "/user/1000/role/10000/99999/edit",
+				replaced:    "/user/1000/role/10000/99999",
+				paramValues: []string{"1000", "10000", "99999"},
+			},
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/role/:/:",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/999",
+				replaced:    "/user/999/role/:/:",
+				paramValues: []string{"999"},
+			},
+			{
+				path:        "/user/1/role",
+				replaced:    "/user/1/role/:/:",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000/role",
+				replaced:    "/user/1000/role/:/:",
+				paramValues: []string{"1000"},
+			},
+			{
+				path:        "/user/1/role/999",
+				replaced:    "/user/1/role/999/:",
+				paramValues: []string{"1", "999"},
+			},
+			{
+				path:        "/user/1000/role/999",
+				replaced:    "/user/1000/role/999/:",
+				paramValues: []string{"1000", "999"},
+			},
+		},
+	},
+	{
+		route: "/user/:/:/export",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/10/export",
+				replaced:    "/user/1/10/export",
+				paramValues: []string{"1", "10"},
+			},
+			{
+				path:        "/user/1000/99999/export",
+				replaced:    "/user/1000/99999/export",
+				paramValues: []string{"1000", "99999"},
+			},
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/:/export",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000",
+				replaced:    "/user/1000/:/export",
+				paramValues: []string{"1000"},
+			},
+			{
+				path:        "/user/1/999",
+				replaced:    "/user/1/999/export",
+				paramValues: []string{"1", "999"},
+			},
+			{
+				path:        "/user/1000/99999",
+				replaced:    "/user/1000/99999/export",
+				paramValues: []string{"1000", "99999"},
+			},
+		},
+	},
+	{
+		route: "/user/:/:/:/export",
+		paths: []struct {
+			path        string
+			replaced    string
+			paramValues []string
+		}{
+			{
+				path:        "/user/1/10/99/export",
+				replaced:    "/user/1/10/99/export",
+				paramValues: []string{"1", "10", "99"},
+			},
+			{
+				path:        "/user/1000/99999/9/export",
+				replaced:    "/user/1000/99999/9/export",
+				paramValues: []string{"1000", "99999", "9"},
+			},
+
+			{
+				path:        "/user/1",
+				replaced:    "/user/1/:/:/export",
+				paramValues: []string{"1"},
+			},
+			{
+				path:        "/user/1000",
+				replaced:    "/user/1000/:/:/export",
+				paramValues: []string{"1000"},
+			},
+			{
+				path:        "/user/1/99999",
+				replaced:    "/user/1/99999/:/export",
+				paramValues: []string{"1", "99999"},
+			},
+			{
+				path:        "/user/1000/99999",
+				replaced:    "/user/1000/99999/:/export",
+				paramValues: []string{"1000", "99999"},
+			},
+		},
+	},
+}
+
+func Test_RadixTreeRouter_replaceRouteParams(t *testing.T) {
+	rtr := NewRadixTreeRouter()
+	for _, routePathParam := range routePathParams {
+		for _, pathParam := range routePathParam.paths {
+			replaced, paramValues := rtr.replaceRouteParams(routePathParam.route, pathParam.path)
+			if replaced != pathParam.replaced || !reflect.DeepEqual(pathParam.paramValues, paramValues) {
+				t.Fatalf("route:'%s',Path:'%s',expectReplaced:'%s',replaced:'%s',expectParamValues:%+v,paramValues:%+v",
+					routePathParam.route, pathParam.path, pathParam.replaced, replaced, pathParam.paramValues, paramValues)
+			}
+		}
+	}
+}
+
+func Test_replaceRouteParams(t *testing.T) {
+	for _, routePathParam := range routePathParams {
+		for _, pathParam := range routePathParam.paths {
+			replaced, paramValues := replaceRouteParams(routePathParam.route, pathParam.path)
+			if replaced != pathParam.replaced || !reflect.DeepEqual(pathParam.paramValues, paramValues) {
+				t.Fatalf("route:'%s',Path:'%s',expectReplaced:'%s',replaced:'%s',expectParamValues:%+v,paramValues:%+v",
+					routePathParam.route, pathParam.path, pathParam.replaced, replaced, pathParam.paramValues, paramValues)
+			}
+		}
+	}
+}
+
+func Benchmark_RadixTreeRouter_replaceRouteParams(b *testing.B) {
+	rtr := NewRadixTreeRouter()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, routePathParam := range routePathParams {
+			for _, pathParam := range routePathParam.paths {
+				_, _ = rtr.replaceRouteParams(routePathParam.route, pathParam.path)
+			}
+		}
+	}
+}
+
+func Benchmark_replaceRouteParams(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, routePathParam := range routePathParams {
+			for _, pathParam := range routePathParam.paths {
+				_, _ = replaceRouteParams(routePathParam.route, pathParam.path)
+			}
+		}
 	}
 }

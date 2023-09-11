@@ -1,11 +1,9 @@
 package fastweb
 
 import (
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"io"
-	"time"
-
-	"go.uber.org/zap"
 )
 
 type Logger interface {
@@ -26,6 +24,8 @@ type Logger interface {
 
 	Panic(...interface{})
 	Panicf(string, ...interface{})
+
+	Printf(format string, args ...interface{})
 }
 
 type zapLogger struct {
@@ -46,10 +46,9 @@ func DefaultLogger(w io.Writer, development bool) *zapLogger {
 		panic(err)
 	}
 
-	log.WithOptions(
-		zap.Fields(
-			zap.String("ts", time.Now().Format(time.RFC3339)),
-		),
+	log = log.WithOptions(
+		zap.AddCaller(),
+		zap.AddCallerSkip(1),
 		zap.ErrorOutput(zapcore.NewMultiWriteSyncer(zapcore.AddSync(w))),
 	)
 
@@ -104,4 +103,8 @@ func (l *zapLogger) Panic(args ...interface{}) {
 
 func (l *zapLogger) Panicf(format string, args ...interface{}) {
 	l.log.Panicf(format, args...)
+}
+
+func (l *zapLogger) Printf(format string, args ...interface{}) {
+	l.log.Infof(format, args...)
 }

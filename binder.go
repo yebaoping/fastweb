@@ -46,7 +46,7 @@ func (b *defaultBinder) Bind(ctx *HttpContext, val interface{}) error {
 		return ErrBindValueNotStruct
 	}
 
-	contentType := str.String(ctx.Request.Header.ContentType())
+	contentType := string(ctx.Request.Header.ContentType())
 	if strings.HasPrefix(contentType, ContentTypeFormUrlEncoded) {
 		return b.bindFormUrlEncoded(ctx, v)
 	} else if strings.HasPrefix(contentType, ContentTypeMultipartFormData) {
@@ -65,7 +65,7 @@ func setFiledVal(field reflect.Value, vals [][]byte) error {
 		return nil
 	}
 
-	val := str.String(vals[0])
+	val := string(vals[0])
 
 	switch field.Kind() {
 	case reflect.Bool:

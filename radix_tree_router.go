@@ -5,10 +5,12 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 )
 
 type RadixTreeRouter struct {
-	rootRoute *radixTreeRoute
+	rootRoute       *radixTreeRoute
+	paramValuesPool sync.Pool
 }
 
 type radixTreeRoute struct {
@@ -40,6 +42,11 @@ func NewRadixTreeRouter() *RadixTreeRouter {
 	return &RadixTreeRouter{
 		rootRoute: &radixTreeRoute{
 			Children: make([]*radixTreeRoute, 0),
+		},
+		paramValuesPool: sync.Pool{
+			New: func() any {
+				return make([]string, 0, 10)
+			},
 		},
 	}
 }
@@ -227,7 +234,7 @@ forChild:
 
 		// 如果是参数路由，先把路由中的参数替换成值
 		if child.IsParam {
-			p, pv := replaceRouteParams(prefix, path)
+			p, pv := rtr.replaceRouteParams(prefix, path)
 			prefix = p
 			paramValues = append(paramValues, pv...)
 		}
@@ -301,11 +308,6 @@ func (rtr *RadixTreeRouter) Params(ctx *HttpContext, regPath, path string) error
 }
 
 func parsePathParams(path string) (string, bool, []string, error) {
-	/*
-		r := regexp.MustCompile(`:\w+`)
-
-		return r.ReplaceAllString(path, ":"), r.MatchString(path), r.FindAllString(path, -1)
-	*/
 	r := regexp.MustCompile(`:\w*`)
 
 	parsedPath := path
@@ -314,7 +316,7 @@ func parsePathParams(path string) (string, bool, []string, error) {
 	params := make([]string, len(indexes))
 	isParam := len(indexes) > 0
 
-	preLen := 0
+	parsedLen := 0
 	for i, index := range indexes {
 		start := index[0]
 		stop := index[1]
@@ -323,38 +325,109 @@ func parsePathParams(path string) (string, bool, []string, error) {
 		}
 
 		params[i] = path[start:stop]
-		parsedPath = parsedPath[:start-preLen+1] + parsedPath[stop-preLen:]
+		parsedPath = parsedPath[:start-parsedLen+1] + parsedPath[stop-parsedLen:]
 
-		preLen = stop - start - 1
+		parsedLen = parsedLen + stop - start - 1
 	}
 
 	return parsedPath, isParam, params, nil
 }
 
-func replaceRouteParams(prefix, path string) (string, []string) {
-	originPrefix := prefix
-	paramValues := make([]string, 0)
+func (rtr *RadixTreeRouter) replaceRouteParams(prefix, path string) (string, []string) {
+	paramValues := rtr.paramValuesPool.Get().([]string)
+	defer rtr.paramValuesPool.Put(paramValues[0:0])
 
-	prefixSplit := strings.Split(prefix, "/")
-	pathSplit := strings.Split(path, "/")
-
-	l := len(prefixSplit)
-	if len(pathSplit) < l {
-		l = len(pathSplit)
-	}
-
-	for i := 0; i < l; i++ {
-		if prefixSplit[i] == ":" {
-			index := strings.Index(prefix, prefixSplit[i])
-			prefix = prefix[:index] + pathSplit[i] + prefix[index+1:]
-
-			paramValues = append(paramValues, pathSplit[i])
+	var start int
+	for {
+		start = strings.IndexByte(prefix, ':')
+		// prefix不包含参数则退出
+		if start < 0 || start >= len(path) {
+			break
 		}
-	}
 
-	if prefix == "" {
-		return originPrefix, nil
+		stop := start
+		if start < len(path) {
+			stop = strings.IndexByte(path[start:], '/')
+			if stop < 0 {
+				stop = len(path)
+			} else {
+				stop += start
+			}
+		}
+
+		paramValue := path[start:stop]
+
+		prefix = prefix[:start] + paramValue + prefix[start+1:]
+
+		paramValues = append(paramValues, paramValue)
 	}
 
 	return prefix, paramValues
+}
+
+var paramValuesPool = sync.Pool{
+	New: func() any {
+		return make([]string, 0, 10)
+	},
+}
+
+var bytesPool = sync.Pool{
+	New: func() any {
+		return make([]byte, 0, 100)
+	},
+}
+
+func replaceRouteParams(prefix, path string) (string, []string) {
+	paramValues := paramValuesPool.Get().([]string)
+	defer paramValuesPool.Put(paramValues[0:0])
+
+	newBytes := bytesPool.Get().([]byte)
+	defer bytesPool.Put(newBytes[0:0])
+
+	var i, prefixStart, pathStart, pathStop, copied int
+	for {
+		if len(prefix)+copied-i <= pathStop {
+			break
+		}
+
+		if i > 0 {
+			prefixStart++
+		}
+		index := strings.IndexByte(prefix[prefixStart:], ':')
+		if index < 0 {
+			newBytes = append(newBytes, prefix[pathStop-copied+i:]...)
+			break
+		}
+
+		prefixStart += index
+		pathStart = prefixStart + copied - i
+
+		if pathStart < len(path) {
+			if i > 0 {
+				newBytes = append(newBytes, prefix[pathStop-copied+i:prefixStart]...)
+			}
+
+			pathStop = strings.IndexByte(path[pathStart:], '/')
+			if pathStop < 0 {
+				pathStop = len(path)
+			} else {
+				pathStop += pathStart
+			}
+		} else {
+			newBytes = append(newBytes, prefix[pathStop-copied+i:]...)
+			break
+		}
+
+		if i == 0 && i < pathStart {
+			newBytes = append(newBytes, prefix[0:pathStart]...)
+		}
+
+		newBytes = append(newBytes, path[pathStart:pathStop]...)
+		copied = copied + pathStop - pathStart
+
+		paramValues = append(paramValues, path[pathStart:pathStop])
+		i++
+	}
+
+	return string(newBytes), paramValues
 }

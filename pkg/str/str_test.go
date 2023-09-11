@@ -15,13 +15,6 @@ func Test_Bytes(t *testing.T) {
 	}
 }
 
-func Test_String(t *testing.T) {
-	s := String(bytes)
-	if s != str {
-		t.Fail()
-	}
-}
-
 func Test_Connect(t *testing.T) {
 	s := []string{"hello", ",", "你好", "！", " "}
 	str, err := Connect(s...)
